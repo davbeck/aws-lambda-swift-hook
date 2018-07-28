@@ -12,7 +12,7 @@ function startServer() {
       resolve(socket);
     });
     server.on('error', err => {
-      console.error('listener failed', error);
+      console.error('listener failed', err);
       exit(1);
     });
     server.listen('/tmp/swift.sock');
