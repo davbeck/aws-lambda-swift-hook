@@ -28,7 +28,7 @@ extension BodyEvent {
 
 
 public struct APIGatewayProxyRequest: Codable, Equatable, BodyEvent {
-	public var hTTPMethod: String = ""
+	public var httpMethod: String = ""
 	public var headers: [String:String] = [:]
 	public var queryStringParameters: [String:String] = [:]
 	public var pathParameters: [String:String] = [:]
@@ -38,7 +38,7 @@ public struct APIGatewayProxyRequest: Codable, Equatable, BodyEvent {
 	public var isBase64Encoded: Bool = false
 	
 	public init(
-		hTTPMethod: String = "",
+		httpMethod: String = "",
 		headers: [String:String] = [:],
 		queryStringParameters: [String:String] = [:],
 		pathParameters: [String:String] = [:],
@@ -47,7 +47,7 @@ public struct APIGatewayProxyRequest: Codable, Equatable, BodyEvent {
 		body: String = "",
 		isBase64Encoded: Bool = false
 		) {
-		self.hTTPMethod = hTTPMethod
+		self.httpMethod = httpMethod
 		self.headers = headers
 		self.queryStringParameters = queryStringParameters
 		self.pathParameters = pathParameters
@@ -56,9 +56,20 @@ public struct APIGatewayProxyRequest: Codable, Equatable, BodyEvent {
 		self.body = body
 		self.isBase64Encoded = isBase64Encoded
 	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.httpMethod = (try? container.decode(String.self, forKey: .httpMethod)) ?? ""
+		self.headers = (try? container.decode([String:String].self, forKey: .headers)) ?? [:]
+		self.queryStringParameters = (try? container.decode([String:String].self, forKey: .queryStringParameters)) ?? [:]
+		self.pathParameters = (try? container.decode([String:String].self, forKey: .pathParameters)) ?? [:]
+		self.stageVariables = (try? container.decode([String:String].self, forKey: .stageVariables)) ?? [:]
+		self.requestContext = (try? container.decode(APIGatewayProxyRequestContext.self, forKey: .requestContext)) ?? APIGatewayProxyRequestContext()
+		self.body = (try? container.decode(String.self, forKey: .body)) ?? ""
+		self.isBase64Encoded = (try? container.decode(Bool.self, forKey: .isBase64Encoded)) ?? false
+	}
 	
 	public enum CodingKeys: String, CodingKey {
-		case hTTPMethod = "httpMethod"
+		case httpMethod = "httpMethod"
 		case headers = "headers"
 		case queryStringParameters = "queryStringParameters"
 		case pathParameters = "pathParameters"
@@ -76,7 +87,7 @@ public struct APIGatewayProxyResponse: Codable, Equatable, BodyEvent {
 	public var isBase64Encoded: Bool = false
 	
 	public init(
-		statusCode: Int = 200,
+		statusCode: Int = 0,
 		headers: [String:String] = [:],
 		body: String = "",
 		isBase64Encoded: Bool = false
@@ -86,18 +97,12 @@ public struct APIGatewayProxyResponse: Codable, Equatable, BodyEvent {
 		self.body = body
 		self.isBase64Encoded = isBase64Encoded
 	}
-	
-	public init(
-		statusCode: Int = 200,
-		headers: [String:String] = [:],
-		body: Data
-		) {
-		self.init(
-			statusCode: statusCode,
-			headers: headers,
-			body: body.base64EncodedString(),
-			isBase64Encoded: true
-		)
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.statusCode = (try? container.decode(Int.self, forKey: .statusCode)) ?? 0
+		self.headers = (try? container.decode([String:String].self, forKey: .headers)) ?? [:]
+		self.body = (try? container.decode(String.self, forKey: .body)) ?? ""
+		self.isBase64Encoded = (try? container.decode(Bool.self, forKey: .isBase64Encoded)) ?? false
 	}
 	
 	public enum CodingKeys: String, CodingKey {
@@ -108,7 +113,6 @@ public struct APIGatewayProxyResponse: Codable, Equatable, BodyEvent {
 	}
 }
 
-
 public struct APIGatewayProxyRequestContext: Codable, Equatable {
 	public var accountID: String = ""
 	public var resourceID: String = ""
@@ -116,9 +120,8 @@ public struct APIGatewayProxyRequestContext: Codable, Equatable {
 	public var requestID: String = ""
 	public var identity: APIGatewayRequestIdentity = APIGatewayRequestIdentity()
 	public var resourcePath: String = ""
-	// TODO: Codable doesn't support untyped dictionaries
-	// we could make it generic, but then it would need to be specified even if it wasn't being used
-	// public var authorizer: [String:Any]
+	// Codable doesn't support this yet
+	// public var authorizer: [String:Any] = [:]
 	
 	public init(
 		accountID: String = "",
@@ -127,13 +130,22 @@ public struct APIGatewayProxyRequestContext: Codable, Equatable {
 		requestID: String = "",
 		identity: APIGatewayRequestIdentity = APIGatewayRequestIdentity(),
 		resourcePath: String = ""
-	) {
+		) {
 		self.accountID = accountID
 		self.resourceID = resourceID
 		self.stage = stage
 		self.requestID = requestID
 		self.identity = identity
 		self.resourcePath = resourcePath
+	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.accountID = (try? container.decode(String.self, forKey: .accountID)) ?? ""
+		self.resourceID = (try? container.decode(String.self, forKey: .resourceID)) ?? ""
+		self.stage = (try? container.decode(String.self, forKey: .stage)) ?? ""
+		self.requestID = (try? container.decode(String.self, forKey: .requestID)) ?? ""
+		self.identity = (try? container.decode(APIGatewayRequestIdentity.self, forKey: .identity)) ?? APIGatewayRequestIdentity()
+		self.resourcePath = (try? container.decode(String.self, forKey: .resourcePath)) ?? ""
 	}
 	
 	public enum CodingKeys: String, CodingKey {
@@ -184,6 +196,20 @@ public struct APIGatewayRequestIdentity: Codable, Equatable {
 		self.userAgent = userAgent
 		self.user = user
 	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.cognitoIdentityPoolID = (try? container.decode(String.self, forKey: .cognitoIdentityPoolID)) ?? ""
+		self.accountID = (try? container.decode(String.self, forKey: .accountID)) ?? ""
+		self.cognitoIdentityID = (try? container.decode(String.self, forKey: .cognitoIdentityID)) ?? ""
+		self.caller = (try? container.decode(String.self, forKey: .caller)) ?? ""
+		self.aPIKey = (try? container.decode(String.self, forKey: .aPIKey)) ?? ""
+		self.sourceIP = (try? container.decode(String.self, forKey: .sourceIP)) ?? ""
+		self.cognitoAuthenticationType = (try? container.decode(String.self, forKey: .cognitoAuthenticationType)) ?? ""
+		self.cognitoAuthenticationProvider = (try? container.decode(String.self, forKey: .cognitoAuthenticationProvider)) ?? ""
+		self.userArn = (try? container.decode(String.self, forKey: .userArn)) ?? ""
+		self.userAgent = (try? container.decode(String.self, forKey: .userAgent)) ?? ""
+		self.user = (try? container.decode(String.self, forKey: .user)) ?? ""
+	}
 	
 	public enum CodingKeys: String, CodingKey {
 		case cognitoIdentityPoolID = "cognitoIdentityPoolId"
@@ -211,6 +237,11 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequestIdentity: Codable, Equ
 		self.aPIKey = aPIKey
 		self.sourceIP = sourceIP
 	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.aPIKey = (try? container.decode(String.self, forKey: .aPIKey)) ?? ""
+		self.sourceIP = (try? container.decode(String.self, forKey: .sourceIP)) ?? ""
+	}
 	
 	public enum CodingKeys: String, CodingKey {
 		case aPIKey = "apiKey"
@@ -235,6 +266,13 @@ public struct APIGatewayCustomAuthorizerContext: Codable, Equatable {
 		self.numKey = numKey
 		self.boolKey = boolKey
 	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.principalID = (try? container.decode(String.self, forKey: .principalID)) ?? ""
+		self.stringKey = (try? container.decode(String.self, forKey: .stringKey)) ?? ""
+		self.numKey = (try? container.decode(Int.self, forKey: .numKey)) ?? 0
+		self.boolKey = (try? container.decode(Bool.self, forKey: .boolKey)) ?? false
+	}
 	
 	public enum CodingKeys: String, CodingKey {
 		case principalID = "principalId"
@@ -252,7 +290,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequestContext: Codable, Equa
 	public var requestID: String = ""
 	public var identity: APIGatewayCustomAuthorizerRequestTypeRequestIdentity = APIGatewayCustomAuthorizerRequestTypeRequestIdentity()
 	public var resourcePath: String = ""
-	public var hTTPMethod: String = ""
+	public var httpMethod: String = ""
 	public var aPIID: String = ""
 	
 	public init(
@@ -263,7 +301,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequestContext: Codable, Equa
 		requestID: String = "",
 		identity: APIGatewayCustomAuthorizerRequestTypeRequestIdentity = APIGatewayCustomAuthorizerRequestTypeRequestIdentity(),
 		resourcePath: String = "",
-		hTTPMethod: String = "",
+		httpMethod: String = "",
 		aPIID: String = ""
 		) {
 		self.path = path
@@ -273,8 +311,20 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequestContext: Codable, Equa
 		self.requestID = requestID
 		self.identity = identity
 		self.resourcePath = resourcePath
-		self.hTTPMethod = hTTPMethod
+		self.httpMethod = httpMethod
 		self.aPIID = aPIID
+	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.path = (try? container.decode(String.self, forKey: .path)) ?? ""
+		self.accountID = (try? container.decode(String.self, forKey: .accountID)) ?? ""
+		self.resourceID = (try? container.decode(String.self, forKey: .resourceID)) ?? ""
+		self.stage = (try? container.decode(String.self, forKey: .stage)) ?? ""
+		self.requestID = (try? container.decode(String.self, forKey: .requestID)) ?? ""
+		self.identity = (try? container.decode(APIGatewayCustomAuthorizerRequestTypeRequestIdentity.self, forKey: .identity)) ?? APIGatewayCustomAuthorizerRequestTypeRequestIdentity()
+		self.resourcePath = (try? container.decode(String.self, forKey: .resourcePath)) ?? ""
+		self.httpMethod = (try? container.decode(String.self, forKey: .httpMethod)) ?? ""
+		self.aPIID = (try? container.decode(String.self, forKey: .aPIID)) ?? ""
 	}
 	
 	public enum CodingKeys: String, CodingKey {
@@ -285,7 +335,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequestContext: Codable, Equa
 		case requestID = "requestId"
 		case identity = "identity"
 		case resourcePath = "resourcePath"
-		case hTTPMethod = "httpMethod"
+		case httpMethod = "httpMethod"
 		case aPIID = "apiId"
 	}
 }
@@ -304,6 +354,12 @@ public struct APIGatewayCustomAuthorizerRequest: Codable, Equatable {
 		self.authorizationToken = authorizationToken
 		self.methodArn = methodArn
 	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.type = (try? container.decode(String.self, forKey: .type)) ?? ""
+		self.authorizationToken = (try? container.decode(String.self, forKey: .authorizationToken)) ?? ""
+		self.methodArn = (try? container.decode(String.self, forKey: .methodArn)) ?? ""
+	}
 	
 	public enum CodingKeys: String, CodingKey {
 		case type = "type"
@@ -317,7 +373,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequest: Codable, Equatable {
 	public var methodArn: String = ""
 	public var resource: String = ""
 	public var path: String = ""
-	public var hTTPMethod: String = ""
+	public var httpMethod: String = ""
 	public var headers: [String:String] = [:]
 	public var queryStringParameters: [String:String] = [:]
 	public var pathParameters: [String:String] = [:]
@@ -329,7 +385,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequest: Codable, Equatable {
 		methodArn: String = "",
 		resource: String = "",
 		path: String = "",
-		hTTPMethod: String = "",
+		httpMethod: String = "",
 		headers: [String:String] = [:],
 		queryStringParameters: [String:String] = [:],
 		pathParameters: [String:String] = [:],
@@ -340,12 +396,25 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequest: Codable, Equatable {
 		self.methodArn = methodArn
 		self.resource = resource
 		self.path = path
-		self.hTTPMethod = hTTPMethod
+		self.httpMethod = httpMethod
 		self.headers = headers
 		self.queryStringParameters = queryStringParameters
 		self.pathParameters = pathParameters
 		self.stageVariables = stageVariables
 		self.requestContext = requestContext
+	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.type = (try? container.decode(String.self, forKey: .type)) ?? ""
+		self.methodArn = (try? container.decode(String.self, forKey: .methodArn)) ?? ""
+		self.resource = (try? container.decode(String.self, forKey: .resource)) ?? ""
+		self.path = (try? container.decode(String.self, forKey: .path)) ?? ""
+		self.httpMethod = (try? container.decode(String.self, forKey: .httpMethod)) ?? ""
+		self.headers = (try? container.decode([String:String].self, forKey: .headers)) ?? [:]
+		self.queryStringParameters = (try? container.decode([String:String].self, forKey: .queryStringParameters)) ?? [:]
+		self.pathParameters = (try? container.decode([String:String].self, forKey: .pathParameters)) ?? [:]
+		self.stageVariables = (try? container.decode([String:String].self, forKey: .stageVariables)) ?? [:]
+		self.requestContext = (try? container.decode(APIGatewayCustomAuthorizerRequestTypeRequestContext.self, forKey: .requestContext)) ?? APIGatewayCustomAuthorizerRequestTypeRequestContext()
 	}
 	
 	public enum CodingKeys: String, CodingKey {
@@ -353,7 +422,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequest: Codable, Equatable {
 		case methodArn = "methodArn"
 		case resource = "resource"
 		case path = "path"
-		case hTTPMethod = "httpMethod"
+		case httpMethod = "httpMethod"
 		case headers = "headers"
 		case queryStringParameters = "queryStringParameters"
 		case pathParameters = "pathParameters"
@@ -365,7 +434,7 @@ public struct APIGatewayCustomAuthorizerRequestTypeRequest: Codable, Equatable {
 public struct APIGatewayCustomAuthorizerResponse: Codable, Equatable {
 	public var principalID: String = ""
 	public var policyDocument: APIGatewayCustomAuthorizerPolicy = APIGatewayCustomAuthorizerPolicy()
-	// ther is currently no way to represent Any with Codable
+	// Codable doesn't support this yet
 	// public var context: [String:Any] = [:]
 	
 	public init(
@@ -374,6 +443,11 @@ public struct APIGatewayCustomAuthorizerResponse: Codable, Equatable {
 		) {
 		self.principalID = principalID
 		self.policyDocument = policyDocument
+	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.principalID = (try? container.decode(String.self, forKey: .principalID)) ?? ""
+		self.policyDocument = (try? container.decode(APIGatewayCustomAuthorizerPolicy.self, forKey: .policyDocument)) ?? APIGatewayCustomAuthorizerPolicy()
 	}
 	
 	public enum CodingKeys: String, CodingKey {
@@ -392,6 +466,11 @@ public struct APIGatewayCustomAuthorizerPolicy: Codable, Equatable {
 		) {
 		self.version = version
 		self.statement = statement
+	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.version = (try? container.decode(String.self, forKey: .version)) ?? ""
+		self.statement = (try? container.decode([IAMPolicyStatement].self, forKey: .statement)) ?? [IAMPolicyStatement]()
 	}
 	
 	public enum CodingKeys: String, CodingKey {
@@ -413,6 +492,12 @@ public struct IAMPolicyStatement: Codable, Equatable {
 		self.action = action
 		self.effect = effect
 		self.resource = resource
+	}
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.action = (try? container.decode([String].self, forKey: .action)) ?? [String]()
+		self.effect = (try? container.decode(String.self, forKey: .effect)) ?? ""
+		self.resource = (try? container.decode([String].self, forKey: .resource)) ?? [String]()
 	}
 	
 	public enum CodingKeys: String, CodingKey {
