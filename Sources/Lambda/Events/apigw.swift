@@ -76,18 +76,18 @@ public struct APIGatewayProxyRequest: Codable, Equatable, BodyEvent {
 		case stageVariables = "stageVariables"
 		case requestContext = "requestContext"
 		case body = "body"
-		case isBase64Encoded = "isBase64Encoded,omitempty"
+		case isBase64Encoded = "isBase64Encoded"
 	}
 }
 
 public struct APIGatewayProxyResponse: Codable, Equatable, BodyEvent {
-	public var statusCode: Int = 0
+	public var statusCode: Int = 200
 	public var headers: [String:String] = [:]
 	public var body: String = ""
 	public var isBase64Encoded: Bool = false
 	
 	public init(
-		statusCode: Int = 0,
+		statusCode: Int = 200,
 		headers: [String:String] = [:],
 		body: String = "",
 		isBase64Encoded: Bool = false
@@ -109,7 +109,7 @@ public struct APIGatewayProxyResponse: Codable, Equatable, BodyEvent {
 		case statusCode = "statusCode"
 		case headers = "headers"
 		case body = "body"
-		case isBase64Encoded = "isBase64Encoded,omitempty"
+		case isBase64Encoded = "isBase64Encoded"
 	}
 }
 
@@ -276,9 +276,9 @@ public struct APIGatewayCustomAuthorizerContext: Codable, Equatable {
 	
 	public enum CodingKeys: String, CodingKey {
 		case principalID = "principalId"
-		case stringKey = "stringKey,omitempty"
-		case numKey = "numKey,omitempty"
-		case boolKey = "boolKey,omitempty"
+		case stringKey = "stringKey"
+		case numKey = "numKey"
+		case boolKey = "boolKey"
 	}
 }
 
