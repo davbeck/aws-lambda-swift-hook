@@ -97,6 +97,15 @@ public struct APIGatewayProxyResponse: Codable, Equatable, BodyEvent {
 		self.body = body
 		self.isBase64Encoded = isBase64Encoded
 	}
+	
+	public init(
+		statusCode: Int = 200,
+		headers: [String:String] = [:],
+		body: Data
+		) {
+		self.init(statusCode: statusCode, headers: headers, body: body.base64EncodedString(), isBase64Encoded: true)
+	}
+	
 	public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		self.statusCode = (try? container.decode(Int.self, forKey: .statusCode)) ?? 0
