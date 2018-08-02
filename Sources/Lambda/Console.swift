@@ -13,20 +13,20 @@ extension FileHandle : TextOutputStream {
 	}
 }
 
-struct Console {
-	func log(_ output: String) {
+public struct Console {
+	public func log(_ output: String) {
 		print(output)
 		fflush(stdout)
 	}
 	
-	func error(_ output: String) {
+	public func error(_ output: String) {
 		var standardError = FileHandle.standardError
 		print(output, to: &standardError)
 		fflush(stderr)
 	}
 	
-	func error(_ output: Swift.Error) {
+	public func error(_ output: Swift.Error) {
 		self.error(output.localizedDescription)
 	}
 }
-let console = Console()
+public let console = Console()
